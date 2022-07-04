@@ -1,8 +1,12 @@
 import NiceModal from "@ebay/nice-modal-react";
 import { Formik } from "formik";
+import { z } from "zod";
+
 import useModalExtended from "../hooks/useModalExtended";
-import FormikValidator, { formikOnSubmitHandler } from "../utils/formik";
+import { formikOnSubmitHandler } from "../utils/formik";
+import { toFormikValidationSchema } from "../utils/zod";
 import { trpc } from "../utils/trpc";
+import { isTitleCaseRefinement } from "../utils/zod";
 import FormTextArea from "./FormTextArea";
 import FormTextInput from "./FormTextInput";
 import Modal from "./Modal";
@@ -11,6 +15,11 @@ interface FormValues {
   label: string;
   description: string;
 }
+
+const FormSchema = z.object({
+  label: z.string().superRefine(isTitleCaseRefinement),
+  description: z.string(),
+});
 
 /** Modal for creating new TODO items. */
 const CreateTodoModal = NiceModal.create(() => {
@@ -29,18 +38,15 @@ const CreateTodoModal = NiceModal.create(() => {
       {/* Form */}
       <Formik
         initialValues={{ label: "", description: "" } as FormValues}
-        validate={(values) =>
-          new FormikValidator(values)
-            .required("label")
-            .required("description")
-            .validate()
-        }
+        validationSchema={toFormikValidationSchema(FormSchema)}
         onSubmit={formikOnSubmitHandler(({ label, description }) =>
           todoCreateOne
             .mutateAsync({ label, description })
             .then(handler.success)
             .catch(handler.failure)
         )}
+        validateOnBlur={false}
+        validateOnChange={false}
       >
         {({
           values,
@@ -50,13 +56,17 @@ const CreateTodoModal = NiceModal.create(() => {
           handleBlur,
           handleSubmit,
           isSubmitting,
+          setFieldError,
         }) => (
           <form className="flex flex-col gap-8" onSubmit={handleSubmit}>
             <FormTextInput
               className="input"
               label="Label"
               name="label"
-              onChange={handleChange}
+              onChange={(e) => {
+                setFieldError("label", "");
+                handleChange(e);
+              }}
               onBlur={handleBlur}
               value={values.label}
               // TODO: This is kind of a funky way of doing this, can we clean this up?
@@ -65,7 +75,10 @@ const CreateTodoModal = NiceModal.create(() => {
             <FormTextArea
               label="Description"
               name="description"
-              onChange={handleChange}
+              onChange={(e) => {
+                setFieldError("description", "");
+                handleChange(e);
+              }}
               onBlur={handleBlur}
               value={values.description}
               // TODO: This is kind of a funky way of doing this, can we clean this up?
