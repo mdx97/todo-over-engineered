@@ -51,10 +51,10 @@ export default class FormikValidator<T> {
   }
 
   /**
-   * The purpose of this function is to set the given `error` if a certain set of criteria is met:
+   * Set the given `error` if a certain set of criteria is met:
    *
    * 1. The `property` does not already have an error.
-   * 2. The given `evaluator` function return false.
+   * 2. The given `evaluator` function returns false.
    */
   protected assert(
     property: keyof T,
@@ -66,7 +66,7 @@ export default class FormikValidator<T> {
     }
   }
 
-  /** Returns an error for the `property` if it is empty. */
+  /** Produces an error for the `property` if it is empty. */
   public required(property: keyof T): this {
     this.assert(property, (value) => Boolean(value), "Cannot be empty!");
     return this;
